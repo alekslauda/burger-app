@@ -14,7 +14,13 @@ class ContactData extends Component {
           type: "text",
           placeholder: "Your Name"
         },
-        value: ""
+        validation: {
+          required: true,
+          errorMessage: "Please enter a valid name"
+        },
+        value: "",
+        valid: false,
+        touched: false
       },
       street: {
         elementType: "input",
@@ -22,7 +28,13 @@ class ContactData extends Component {
           type: "text",
           placeholder: "Street"
         },
-        value: ""
+        validation: {
+          required: true,
+          errorMessage: "Please enter a valid street"
+        },
+        value: "",
+        valid: false,
+        touched: false
       },
       zipCode: {
         elementType: "input",
@@ -30,7 +42,15 @@ class ContactData extends Component {
           type: "text",
           placeholder: "ZIP Code"
         },
-        value: ""
+        validation: {
+          required: true,
+          minLength: 5,
+          maxLength: 5,
+          errorMessage: "Please enter a valid ZIP Code"
+        },
+        value: "",
+        valid: false,
+        touched: false
       },
       country: {
         elementType: "input",
@@ -38,7 +58,13 @@ class ContactData extends Component {
           type: "text",
           placeholder: "Country"
         },
-        value: ""
+        validation: {
+          required: true,
+          errorMessage: "Country is invalid"
+        },
+        value: "",
+        valid: false,
+        touched: false
       },
       email: {
         elementType: "input",
@@ -46,7 +72,13 @@ class ContactData extends Component {
           type: "email",
           placeholder: "Your Email"
         },
-        value: ""
+        validation: {
+          required: true,
+          errorMessage: "Please enter a valid email"
+        },
+        value: "",
+        valid: false,
+        touched: false
       },
       deliveryMethod: {
         elementType: "select",
@@ -56,21 +88,54 @@ class ContactData extends Component {
             { value: "cheapest", displayValue: "Cheapest" }
           ]
         },
-        value: ""
+        value: "fastest",
+        valid: true,
+        validation: {}
       }
     },
+    formIsValid: false,
     loading: false
+  };
+
+  checkValidity = (value, rules) => {
+    let isValid = true;
+
+    if (rules.required) {
+      isValid = value.trim() !== "" && isValid;
+    }
+
+    if (rules.minLength) {
+      isValid = value.length >= rules.minLength && isValid;
+    }
+
+    if (rules.maxLength) {
+      isValid = value.length <= rules.maxLength && isValid;
+    }
+
+    return isValid;
   };
 
   inputChangedHandler = (evt, inputIdentifier) => {
     let updatedOrderForm = { ...this.state.orderForm };
-    let updatedElement = {...updatedOrderForm[inputIdentifier]};
+    let updatedElement = { ...updatedOrderForm[inputIdentifier] };
 
     updatedElement.value = evt.target.value;
+    updatedElement.touched = true;
+    updatedElement.valid = this.checkValidity(
+      updatedElement.value,
+      updatedElement.validation
+    );
     updatedOrderForm[inputIdentifier] = updatedElement;
 
+    let formIsValid = true;
+
+    for (let inputIdentifier in updatedOrderForm) {
+      formIsValid = updatedOrderForm[inputIdentifier].valid && formIsValid;
+    }
+
     this.setState({
-      orderForm: updatedOrderForm
+      orderForm: updatedOrderForm,
+      formIsValid: formIsValid
     });
   };
 
@@ -79,11 +144,12 @@ class ContactData extends Component {
 
     this.setState({ loading: true });
 
-
-    let formData = {}
+    let formData = {};
 
     for (let formElementIdentifier in this.state.orderForm) {
-        formData[formElementIdentifier] = this.state.orderForm[formElementIdentifier].value;
+      formData[formElementIdentifier] = this.state.orderForm[
+        formElementIdentifier
+      ].value;
     }
 
     const order = {
@@ -120,10 +186,14 @@ class ContactData extends Component {
             elementType={formElement.config.elementType}
             elementConfig={formElement.config.elementConfig}
             value={formElement.config.value}
+            invalid={!formElement.config.valid}
+            touched={formElement.config.touched}
+            shouldValidate={formElement.config.validation}
+            validation={formElement.config.validation}
             changed={evt => this.inputChangedHandler(evt, formElement.id)}
           />
         ))}
-        <Button btnType="Success">
+        <Button btnType="Success" disabled={!this.state.formIsValid}>
           ORDER
         </Button>
       </form>
